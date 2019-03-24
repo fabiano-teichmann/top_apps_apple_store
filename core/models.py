@@ -15,3 +15,7 @@ class AppsAppleStore(models.Model):
     def __str__(self):
         return self.track_name
 
+
+class CsvFile(models.Model):
+    name = models.CharField(max_length=150)
+    file_csv = models.FileField()

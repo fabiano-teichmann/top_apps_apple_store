@@ -5,16 +5,19 @@ from django.utils.datetime_safe import datetime
 
 
 class Controller(object):
-    def __init__(self):
-        now = datetime.now()
-        self.csv_file = f"report_apple_store-{now.day}-{now.month}-{now.year}:{now.hour}:{now.minute}.csv"
-
-    @staticmethod
-    def get_top_apps(file_):
+    def __init__(self, file_):
         """
 
         Args:
-            file_ (str): path do csv
+            file_ (str): Path do arquivo csv que vai ser trabalhado
+        """
+        self.path = os.getcwd()
+        now = datetime.now()
+        self.csv_file = f"report_apple_store-{now.day}-{now.month}-{now.year}:{now.hour}:{now.minute}.csv"
+        self. df = pd.read_csv(file_)
+
+    def get_top_apps(self):
+        """ Pega os top 10 app das categorias notícias, livros, músicas
 
         Returns:
             Dataframe:  10 apps de notícias com mais avaliações.
@@ -22,17 +25,17 @@ class Controller(object):
             Dataframe:  10 apps de música com mais avaliações.
 
         """
-        df = pd.read_csv(file_)
+
         # 10 apps de notícias com mais avaliações
-        news = df[df.prime_genre == 'News']
+        news = self.df[self.df.prime_genre == 'News']
         top_news = news.sort_values(by='rating_count_tot', ascending=False)
 
         # 10 app musicas com mais avaliações
-        musics = df[df.prime_genre == 'Music']
+        musics = self.df[self.df.prime_genre == 'Music']
         top_musics = musics.sort_values(by='rating_count_tot', ascending=False)
 
         # 10 app de livros com mais avaliações
-        books = df[df.prime_genre == 'Book']
+        books = self.df[self.df.prime_genre == 'Book']
         top_books = books.sort_values(by='rating_count_tot', ascending=False)
         return top_news[0:10], top_books[0:10], top_musics[0:10]
 
@@ -57,16 +60,27 @@ class Controller(object):
         report = report.rename(columns={'rating_count_tot': 'n_citacoes'})
         return report
 
-    def generate_csv(self, path, report):
+    def generate_csv(self, report):
         """
 
         Args:
             report (DataFrame):
-            path (str):
 
         Returns:
-
+            str: path csv gerado
         """
-        path_file = os.path.join(path, self.csv_file)
+        path_file = os.path.join(self.path, 'media', self.csv_file)
         report.to_csv(path_file, index=False)
-        return path_file
+        return self.csv_file
+
+    def generate_array(self):
+        """ Gera array numpy para salvar no banco de dados
+
+
+
+        Returns:
+            ndarray:
+        """
+        report = self.df[['id', 'track_name', 'rating_count_tot', 'size_bytes', 'price', 'prime_genre']]
+        report = report.rename(columns={'rating_count_tot': 'n_citacoes'})
+        return report.get_values()
