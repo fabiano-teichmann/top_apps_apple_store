@@ -81,7 +81,6 @@ DATABASES = {
             'HOST': 'localhost',
             'PORT': 27017,
             'ENFORCE_SCHEMA': False,
-            'AUTH_SOURCE': 'pacientes_gntech',
 
         }
     }

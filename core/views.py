@@ -1,12 +1,11 @@
 import os
+from json import dumps
 
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import generic
 
 from django.core.files.storage import FileSystemStorage
-from django.core import serializers
-
 from core.controller import Controller
 from core.models import AppsAppleStore
 
@@ -39,11 +38,12 @@ class HomeView(generic.CreateView):
         return render(request, self.template_name, {'msg': None})
 
     def report(self, url):
-        controller = Controller(file_=url)
-        news, books, musics = controller.get_top_apps()
+        controller = Controller()
+        df = controller.load_csv(file_=url)
+        news, books, musics = controller.get_top_apps(df)
         report = controller.generate_report(top_news=news, top_books=books, top_musics=musics)
         file_ = controller.generate_csv(report)
-        save = controller.save_db()
+        save = controller.save_db(df)
         return file_, save
 
 
@@ -51,6 +51,6 @@ class ReturnJsonView(generic.DetailView):
     model = AppsAppleStore
 
     def get(self, request):
-        model_json = serializers.serialize("json", AppsAppleStore.objects.all())
-        data = {"data": model_json}
+        data = Controller().get_all_values()
+        data = {"data": dumps(data)}
         return JsonResponse(data)

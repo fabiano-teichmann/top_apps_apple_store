@@ -6,20 +6,31 @@ from pymongo import MongoClient
 from pymongo.errors import BulkWriteError
 
 class Controller(object):
-    def __init__(self, file_):
-        """
+    def __init__(self):
 
-        Args:
-            file_ (str): Path do arquivo csv que vai ser trabalhado
-        """
         self.path = os.getcwd()
         now = datetime.now()
         self.csv_file = f"report_apple_store-{now.day}-{now.month}-{now.year}:{now.hour}:{now.minute}.csv"
-        self. df = pd.read_csv(file_)
+        client = MongoClient('localhost', 27017)
+        db = client['apple_store']
+        self.collection = db['apps']
 
-    def get_top_apps(self):
+    def load_csv(self, file_):
+        """
+
+        Args:
+            file_ (str): path file
+
+        Returns:
+
+        """
+        return pd.read_csv(file_)
+
+    def get_top_apps(self, df):
         """ Pega os top 10 app das categorias notícias, livros, músicas
 
+        Args:
+            df (dataframe)
         Returns:
             Dataframe:  10 apps de notícias com mais avaliações.
             Dataframe:  10 apps de livros com mais avaliações.
@@ -28,15 +39,15 @@ class Controller(object):
         """
 
         # 10 apps de notícias com mais avaliações
-        news = self.df[self.df.prime_genre == 'News']
+        news = df[df.prime_genre == 'News']
         top_news = news.sort_values(by='rating_count_tot', ascending=False)
 
         # 10 app musicas com mais avaliações
-        musics = self.df[self.df.prime_genre == 'Music']
+        musics = df[df.prime_genre == 'Music']
         top_musics = musics.sort_values(by='rating_count_tot', ascending=False)
 
         # 10 app de livros com mais avaliações
-        books = self.df[self.df.prime_genre == 'Book']
+        books = df[df.prime_genre == 'Book']
         top_books = books.sort_values(by='rating_count_tot', ascending=False)
         return top_news[0:10], top_books[0:10], top_musics[0:10]
 
@@ -74,27 +85,28 @@ class Controller(object):
         report.to_csv(path_file, index=False)
         return self.csv_file
 
-    def save_db(self):
+    def save_db(self, df):
         """ Salva no mongo db os resultados
 
-
+        Args:
+            df (dataframe)
 
         Returns:
            bool:
         """
 
-        report = self.df[['id', 'track_name', 'size_bytes', 'currency', 'price', 'rating_count_tot', 'rating_count_ver',
+        report = df[['id', 'track_name', 'size_bytes', 'currency', 'price', 'rating_count_tot', 'rating_count_ver',
                           'user_rating', 'user_rating_ver', 'ver', 'cont_rating', 'prime_genre']]
 
         report = report.rename(columns={'rating_count_tot': 'n_citacoes', 'id': '_id'})
-        client = MongoClient('localhost', 27017)
-        db = client['apple_store']
-        collection = db['apps']
+
         reports = report.to_dict(orient='records')
         try:
-            collection.insert_many(reports)
+            self.collection.insert_many(reports)
             return True
         except BulkWriteError:
             return False
 
-
+    def get_all_values(self):
+        data = self.collection.find({})
+        return [x for x in data]
