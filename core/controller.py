@@ -2,7 +2,8 @@ import os
 
 import pandas as pd
 from django.utils.datetime_safe import datetime
-
+from pymongo import MongoClient
+from pymongo.errors import BulkWriteError
 
 class Controller(object):
     def __init__(self, file_):
@@ -73,14 +74,27 @@ class Controller(object):
         report.to_csv(path_file, index=False)
         return self.csv_file
 
-    def generate_array(self):
-        """ Gera array numpy para salvar no banco de dados
+    def save_db(self):
+        """ Salva no mongo db os resultados
 
 
 
         Returns:
-            ndarray:
+           bool:
         """
-        report = self.df[['id', 'track_name', 'rating_count_tot', 'size_bytes', 'price', 'prime_genre']]
-        report = report.rename(columns={'rating_count_tot': 'n_citacoes'})
-        return report.get_values()
+
+        report = self.df[['id', 'track_name', 'size_bytes', 'currency', 'price', 'rating_count_tot', 'rating_count_ver',
+                          'user_rating', 'user_rating_ver', 'ver', 'cont_rating', 'prime_genre']]
+
+        report = report.rename(columns={'rating_count_tot': 'n_citacoes', 'id': '_id'})
+        client = MongoClient('localhost', 27017)
+        db = client['apple_store']
+        collection = db['apps']
+        reports = report.to_dict(orient='records')
+        try:
+            collection.insert_many(reports)
+            return True
+        except BulkWriteError:
+            return False
+
+

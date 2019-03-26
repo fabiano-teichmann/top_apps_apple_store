@@ -25,33 +25,32 @@ class HomeView(generic.CreateView):
             filename = fs.save(myfile.name, myfile)
             base = os.getcwd()
             url = os.path.join(base, 'media', filename)
-            file_, df = self.report(url)
+            file_, save = self.report(url)
             uploaded_file_url = fs.url(file_)
-            #self.save_db(tops=df)
+            if save:
+                return render(request, self.template_name, {
+                    'uploaded_file_url': uploaded_file_url, 'msg': 'Salvo com sucesso'
+                })
+            else:
+                return render(request, self.template_name, {
+                    'uploaded_file_url': uploaded_file_url,
+                    'msg': 'Este arquivo csv já esta inserido no banco de daodos'})
 
-            return render(request, self.template_name, {
-                'uploaded_file_url': uploaded_file_url
-            })
-        return render(request, self.template_name)
+        return render(request, self.template_name, {'msg': None})
 
     def report(self, url):
         controller = Controller(file_=url)
         news, books, musics = controller.get_top_apps()
         report = controller.generate_report(top_news=news, top_books=books, top_musics=musics)
         file_ = controller.generate_csv(report)
-        tops = controller.generate_array()
-        return file_, tops
-
-    def save_db(self, tops):
-        for i in tops:
-            self.model.objects.create(id=i[0], track_name=i[1], n_citacoes=i[2],
-                                      size_bytes=i[3], price=i[4], prime_genre=i[5])
+        save = controller.save_db()
+        return file_, save
 
 
 class ReturnJsonView(generic.DetailView):
     model = AppsAppleStore
 
     def get(self, request):
-        SomeModel_json = serializers.serialize("json", AppsAppleStore.objects.all())
-        data = {"SomeModel_json": SomeModel_json}
+        model_json = serializers.serialize("json", AppsAppleStore.objects.all())
+        data = {"data": model_json}
         return JsonResponse(data)

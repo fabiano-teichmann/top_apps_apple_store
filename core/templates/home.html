@@ -3,21 +3,31 @@
 {% block title %}Home{% endblock %}
 
 <div class="col-xs-10 col-xs-offset-1">
-    <h1 class="center">Importe csv files</h1>
 
   {% block content %}
-    <form action="." method="POST" class="form-group" enctype="multipart/form-data">
+
+    <div class="col-xs-8 offset-2">
+        <hr>
+        <h1 class="center">Importe csv files</h1>
+        <form action="." method="POST" class="form-group" enctype="multipart/form-data">
          {% csrf_token %}
         <label> Escolha Arquivo csv</label>
         <input type="file" name="csv" />
         <button class="btn btn-success"> Enviar</button>
     </form>
-    <hr>
+
+        {%if msg is not None %}
+            {{msg}}
+        {%endif%}
+  <br>
     {% if uploaded_file_url %}
         <p>File uploaded at: <a href="{{ uploaded_file_url }}">{{ uploaded_file_url }}</a></p>
      {% endif %}
 
-  <p><a href="{% url 'home' %}">Importar outro csv</a></p>
+      <p><a href="{% url 'home' %}" class="btn btn-success">Home</a>
+      <a href="{%url 'api' %}" class="btn btn-success"> Gerar Json </a></p>
+  </div>
+
   {% endblock %}
 
 </div>
